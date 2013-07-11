@@ -1,92 +1,124 @@
 function get_params() {
-  var temp_array = decodeURI(document.URL).split('?');
-  if(temp_array.length < 2) return [];
-  var params = temp_array[1].split('&');
-  var par = [];
-  $(params).each(function(i, e) {
-    if(e.match('uorder_')) { par.push(params[i]); }
-  })
-  return par;
-}
-
-function _uorder_parse_param(param) {
-  var rep = new RegExp(/\[([a-zA-Z0-9_-]*)\]/g)
-  var ev = param.match(rep);
-  var ret = {};
-  ret['table'] = param.replace(/uorder_([a-zA-Z0-9_-]*)\[.*/, '$1');
-  ret['col'] = ev[0].replace(rep, '$1');
-  ret['direction'] = param.split('=')[1];
-  return ret;
-}
-
-function _uorder_swap_dir(dir) {
-  if(dir == 'desc') {
-    return 'asc';
-  } else if(dir == 'asc'){
-    return 'none';
-  } else {
-    return 'desc';
+  var parameters = {};
+  var url_params = location.search.substring(1);
+  var reg = /([^&=]+)=([^&]*)/g;
+  var par;
+  while(par = reg.exec(url_params)) {
+    parameters[decodeURIComponent(par[1])] = decodeURIComponent(par[2]);
   }
+  return parameters;
 }
 
-function _uorder_add_or_update_param(order) {
-  var new_url = document.URL;
-  var hit = false;
-  $(document.uorder_params).each(function(i, e) {
-    if((e['table'] == order['table']) && (e['col'] == order['col'])) {
-      var reg = new RegExp('(uorder_' + e['table'] + '\\[' + e['col'] + '\\]=)[ascde]+');
-      new_url = new_url.replace(reg, '$1' + order['direction']);
-      hit = true;
+function strip_uorder_params() {
+  $.map(document.params, function(v, k) {
+    if(k.match(/uorder_/)) {
+      var order = {
+        'table': k.replace(/uorder_([a-zA-Z0-9_-]*)\[.*/g, '$1'),
+        'col': k.replace(/uorder_[a-zA-Z0-9_-]*\[(.*)\]/g, '$1'),
+        'direction': v
+      };
+      delete document.params[k]
+      var uorder = new UOrder(get_data_column(get_data_table(order['table']), order['col']));
+      uorder.set_direction(order['direction']);
+      return uorder;
     }
   });
-  if(!hit) {
-    var temp_array = document.URL.split('?');
-    var params = 'uorder_' + order['table'] + '[' + order['col'] + ']=' + order['direction'];
-    new_url += (temp_array.length > 1 ?  '&' : '?');
-    new_url += params;
-  }
-  window.location.href = new_url;
 }
 
-function load_orders() {
-  document.uorder_params = $(get_params()).map(function(i, e) { return _uorder_parse_param(e) });
-  $(document.uorder_params).each(function(i, e) {
-    var table = $('table[data-table=' + e['table'] + ']');
-    var head = table.find('th[data-order=' + e['col'] + ']');
-    head.attr('order-direction', e['direction']);
-    head.innerHTML
-  })
+function get_data_table(name) {
+  return $('table[data-table=' + name + ']');
 }
 
-function enable_orders() {
-  $('table[data-table]').each(function() {
-    $(this).find('th[data-order]').each(function(i, e) {
-      var el = $(e);
-      el.on('click',_click_order);
-      var icon = $('<span>').addClass('ui-icon');
-      if((dir = el.attr('order-direction')) && dir != 'none') {
-        icon.addClass((dir == 'desc' ? 'ui-icon-carat-1-s' : 'ui-icon-carat-1-n'));
-      } else {
-        icon.attr('class', 'ui-icon ui-icon-carat-2-n-s');
+function get_data_column(table, name) {
+  return table.find('th[data-order=' + name + ']');
+}
+
+function enable_uorder() {
+  var map = $('table[data-table]').map(function(i, e) {
+    return $(e).find('th[data-order]').map(function(j, dhead) {
+      var head = $(dhead);
+      if(!head.uorder) {
+        new UOrder(head);
       }
-      el.append(icon);
-    })
+      dhead.uorder.add_cb(reorder);
+      return dhead.uorder;
+    });
   });
+  var merged = [];
+  return merged.concat.apply(merged, map);
 }
 
-function _click_order() {
-  var element = $(this);
-  var new_direction = _uorder_swap_dir(element.attr('order-direction'));
-  _uorder_add_or_update_param({
-    'table': element.parents('table[data-table]').attr('data-table'),
-    'col': element.attr('data-order'),
-    'direction': new_direction
-  })
+function UOrder(head) {
+  head[0].uorder = this;
+  this.head_element = head;
+  this.head_name = this.head_element.attr('data-order');
+  this.table_element = this.head_element.parents('[data-table]');
+  this.table_name = this.table_element.attr('data-table');
+
+  var direction_indicator = $('<span>');
+  this.set_direction = set_direction;
+  this.cycle_direction = cycle_direction;
+  var direction;
+  var direction_cycles = ['asc', 'desc'];
+  if(cyc = this.head_element.attr('direction-cycle')) {
+    direction_cycles = cyc.split(' ');
+  }
+
+  var cycle_cbs = [];
+  this.add_cb = add_cb;
+
+  this.param_serialize = param_serialize;
+
+  function set_direction(dir) {
+    direction = direction_cycles.indexOf(dir);
+    switch(dir) {
+      case 'asc':
+        var css_class = 'ui-icon ui-icon-carat-1-n';
+        break;
+      case 'desc':
+        var css_class = 'ui-icon ui-icon-carat-1-s';
+        break
+      default:
+        var css_class = 'ui-icon ui-icon-carat-1-n-s';
+    }
+    direction_indicator.attr('class', css_class);
+  };
+
+  function cycle_direction() {
+    direction = (direction != null ? direction+1 : 0);
+    if(direction == direction_cycles.length) direction = 0;
+    for(var i = 0; i < cycle_cbs.length; i++) {
+      cycle_cbs[i](this);
+    }
+  }
+
+  function add_cb(cb) {
+    cycle_cbs.push(cb);
+  }
+
+  function param_serialize() {
+    return 'uorder_' + this.table_name + '[' + this.head_name + ']=' + direction_cycles[direction];
+  }
+
+  this.head_element.on('click', function() {
+    this.uorder.cycle_direction();
+  });
+  this.head_element.append(direction_indicator);
+}
+
+
+function reorder(element) {
+  var old_params = $.map(document.params, function(v, k) {
+    return [k, v].join('=');
+  }).join('&');
+  var uorder_param = element.param_serialize();
+  location.href = location.pathname + '?' + [old_params, uorder_param].join('&');
 }
 
 $(document).ready(function() {
 
-  load_orders();
-  enable_orders();
+  document.params = get_params();
+  strip_uorder_params(document.params);
+  document.uorders = enable_uorder();
 
 });

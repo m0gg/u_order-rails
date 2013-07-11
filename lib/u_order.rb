@@ -31,12 +31,14 @@ module UOrder
           end
           (direction && column) ? [column, direction].join(' ') : nil
         end
+
       elsif options.is_a?(Symbol) or options.is_a?(String)
         orders = _uorder_single(options)
       end
 
-      unless orders.nil? || orders.empty? || orders.compact!
-        order(orders.compact.join(','))
+      unless orders.nil? || orders.empty?
+        orders.compact!
+        order(orders.join(','))
       else
         clone
       end
