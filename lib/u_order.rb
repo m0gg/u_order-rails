@@ -19,27 +19,25 @@ module UOrder
 
     public
     def uorder(options)
-        if options.is_a? Hash
-          orders = options.map do |col,val|
-            column = direction = ''
-            if column_is_available?(col)
-              column = col.to_s
-            else
-              raise "Unknown column #{col}!"
-            end
-            if ['asc', 'desc'].include?(val.to_s.downcase)
-              direction = val
-            else
-              raise "Unknown order-direction #{val}!"
-            end
-            [column, direction].join(' ')
+      if options.is_a? Hash
+        orders = options.map do |col,val|
+          column = direction = ''
+          if column_is_available?(col)
+            column = col.to_s
+          else
+            raise "Unknown column #{col}!"
           end
-        elsif options.is_a?(Symbol) or options.is_a?(String)
-          orders = _uorder_single(options)
-        else
-          raise "No order specified"
+          if ['asc', 'desc'].include?(val.to_s.downcase)
+            direction = val
+          else
+            raise "Unknown order-direction #{val}!"
+          end
+          [column, direction].join(' ')
+        end
+      elsif options.is_a?(Symbol) or options.is_a?(String)
+        orders = _uorder_single(options)
       end
-      order(orders.join(','))
+      orders.nil? ? clone : order(orders.join(','));
     end
 
   end
