@@ -22,6 +22,8 @@ function _uorder_parse_param(param) {
 function _uorder_swap_dir(dir) {
   if(dir == 'desc') {
     return 'asc';
+  } else if(dir == 'asc'){
+    return 'none';
   } else {
     return 'desc';
   }
@@ -62,7 +64,7 @@ function enable_orders() {
       var el = $(e);
       el.on('click',_click_order);
       var icon = $('<span>').addClass('ui-icon');
-      if(dir = el.attr('order-direction')) {
+      if((dir = el.attr('order-direction')) && dir != 'none') {
         icon.addClass((dir == 'desc' ? 'ui-icon-carat-1-s' : 'ui-icon-carat-1-n'));
       } else {
         icon.attr('class', 'ui-icon ui-icon-carat-2-n-s');

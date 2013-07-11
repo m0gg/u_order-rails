@@ -21,7 +21,6 @@ module UOrder
     def uorder(options)
       if options.is_a? Hash
         orders = options.map do |col,val|
-          column = direction = ''
           if column_is_available?(col)
             column = col.to_s
           else
@@ -29,15 +28,18 @@ module UOrder
           end
           if ['asc', 'desc'].include?(val.to_s.downcase)
             direction = val
-          else
-            raise "Unknown order-direction #{val}!"
           end
-          [column, direction].join(' ')
+          (direction && column) ? [column, direction].join(' ') : nil
         end
       elsif options.is_a?(Symbol) or options.is_a?(String)
         orders = _uorder_single(options)
       end
-      orders.nil? ? clone : order(orders.join(','));
+
+      unless orders.nil? || orders.empty? || orders.compact!
+        order(orders.compact.join(','))
+      else
+        clone
+      end
     end
 
   end
