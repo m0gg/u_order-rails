@@ -1,5 +1,5 @@
 function get_params() {
-  var temp_array = document.URL.split('?');
+  var temp_array = decodeURI(document.URL).split('?');
   if(temp_array.length < 2) return [];
   var params = temp_array[1].split('&');
   var par = [];
@@ -49,14 +49,25 @@ function _uorder_add_or_update_param(order) {
 function load_orders() {
   document.uorder_params = $(get_params()).map(function(i, e) { return _uorder_parse_param(e) });
   $(document.uorder_params).each(function(i, e) {
-    $('table[u_order=' + e['table'] + ']').find('th[data-order=' + e['col'] + ']').attr('order-direction', e['direction']);
+    var table = $('table[data-table=' + e['table'] + ']');
+    var head = table.find('th[data-order=' + e['col'] + ']');
+    head.attr('order-direction', e['direction']);
+    head.innerHTML
   })
 }
 
 function enable_orders() {
-  $('table[u_order]').each(function() {
+  $('table[data-table]').each(function() {
     $(this).find('th[data-order]').each(function(i, e) {
-      $(e).click(_click_order);
+      var el = $(e);
+      el.on('click',_click_order);
+      var icon = $('<span>').addClass('ui-icon');
+      if(dir = el.attr('order-direction')) {
+        icon.addClass((dir == 'desc' ? 'ui-icon-carat-1-s' : 'ui-icon-carat-1-n'));
+      } else {
+        icon.attr('class', 'ui-icon ui-icon-carat-2-n-s');
+      }
+      el.append(icon);
     })
   });
 }
@@ -65,7 +76,7 @@ function _click_order() {
   var element = $(this);
   var new_direction = _uorder_swap_dir(element.attr('order-direction'));
   _uorder_add_or_update_param({
-    'table': element.parents('table[u_order]').attr('u_order'),
+    'table': element.parents('table[data-table]').attr('data-table'),
     'col': element.attr('data-order'),
     'direction': new_direction
   })
