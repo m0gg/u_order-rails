@@ -1,3 +1,36 @@
 = UOrder
 
-This project rocks and uses MIT-LICENSE.
+== Current features:
+
+* order by a single column/attribute
+* possibility to add your own callbacks on ordering
+
+== Dependencies
+
+* jruby-rails
+* jquery-ui-rails
+
+== Installation
+Gemfile
+
+  gem 'u_order', '~> 0.2', :git => 'https://github.com/m0gg/u_order-rails.git'
+
+application.js
+
+  //= require u_order
+
+== Usage:
+
+Identify a table to be ordered, +data-table+ is an ordergroup name you may choose yourself, it's independant of the actual table or collection.
+
+  <table data-table="posts">
+    <tr>
+
+Set the attribute to order with +data-order+, this one would order by +title+
+
+  <th data-order="title">Title</th>
+
+The last thing is to call the +uorder+ method with chosen params on your ActiveRecord relation. The +data-order+ attribute is prefixed with "uorder_"
+
+  @posts = Post.uorder(params[:uorder_posts])
+
