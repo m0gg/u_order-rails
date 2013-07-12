@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.name        = 'u_order'
   s.version     = UOrder::VERSION
   s.authors     = ['Marcel Sackermann']
-  s.email       = ['marcel@m0gg.org']
+  s.email       = ['marcel@m0gg.org', 'marcel@iras-revier.de']
   s.homepage    = 'http://m0gg.org'
   s.summary     = ''
   s.description = ''
