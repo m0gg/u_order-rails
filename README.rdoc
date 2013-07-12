@@ -1,6 +1,6 @@
 = UOrder
 
-== Current features:
+== Current features
 
 * order by a single column/attribute
 * possibility to add your own callbacks on ordering
@@ -19,7 +19,7 @@ application.js
 
   //= require u_order
 
-== Usage:
+== Usage
 
 Identify a table to be ordered, +data-table+ is an ordergroup name you may choose yourself, it's independant of the actual table or collection.
 
