@@ -1,7 +1,6 @@
 require 'active_record'
 
 module UOrder
-
   module RelationMethods
 
     private
@@ -56,7 +55,7 @@ module UOrder
         ::ActiveRecord::Base.extend RelationMethods
         ::ActiveRecord::Relation.send(:include, RelationMethods)
       end
-
     end
   end
+
 end

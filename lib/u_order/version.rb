@@ -1,3 +1,3 @@
 module UOrder
-  VERSION = "0.2.b"
+  VERSION = "0.2"
 end
